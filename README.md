@@ -9,5 +9,6 @@ simply run `./run.sh` or
 Feel free to `crontab -e` to schedule periodic runs, e.g., every 15 minutes:
 ```
 */15 * * * * /path/to/your/project/run.sh
+```
 
 In future, I may add visualizations and dashboards using tools like streamlit to analyze job market trends.
