@@ -135,7 +135,10 @@ def extract_job_data_from_url(url: str = None) -> list[dict]:
 
                     # Check if listing is less than 10 minutes old
                     listing_date = job.get('listingDate', '')
-                    if listing_date and is_less_than_10m(listing_date):
+                    if all(
+                        listing_date,
+                        is_less_than_10m(listing_date)
+                    ):
                         LOGGER.info(f"🆕 Recent listing found for job ID {job_id} listed at {listing_date}")
                         msg = f"🆕 New job listing found: {job.get('title', 'N/A')} at {job.get('employer', {}).get('name', 'N/A')}\nLink: https://www.seek.com.au/job/{job_id}"
                         send_telegram(
