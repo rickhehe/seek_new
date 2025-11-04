@@ -44,12 +44,24 @@ def init_database(conn):
             -- Text fields extracted from complex data
             bullet_points TEXT,
             locations TEXT,
+            country_codes TEXT,
             work_types TEXT,
             work_arrangements TEXT,
             
             salary_label VARCHAR
         )
     """)
+    
+    # Add country_codes column if it doesn't exist (for existing tables)
+    try:
+        conn.execute("""
+            ALTER TABLE pg.jobs 
+            ADD COLUMN IF NOT EXISTS country_codes TEXT
+        """)
+    except Exception as e:
+        # Column might already exist or other error
+        pass
+    
     print("✅ Database initialized")
 
 
@@ -68,6 +80,14 @@ def _extract_locations_text(locations) -> str:
         return ""
     labels = [loc.get('label', '') for loc in locations if isinstance(loc, dict)]
     return "; ".join(labels)
+
+
+def _extract_country_codes_text(locations) -> str:
+    """Extract country codes as semicolon-separated text"""
+    if not locations:
+        return ""
+    codes = [loc.get('countryCode', '') for loc in locations if isinstance(loc, dict)]
+    return "; ".join(codes)
 
 
 def _extract_work_types_text(work_types) -> str:
@@ -135,6 +155,7 @@ def upsert_jobs(conn, jobs: list[dict]) -> dict:
         # Extract text values
         bullet_points_text = _extract_bullet_points_text(job.get('bulletPoints', []))
         locations_text = _extract_locations_text(job.get('locations', []))
+        country_codes_text = _extract_country_codes_text(job.get('locations', []))
         work_types_text = _extract_work_types_text(job.get('workTypes', []))
         work_arr_text = _extract_work_arrangements_text(job.get('workArrangements'))
         
@@ -150,6 +171,7 @@ def upsert_jobs(conn, jobs: list[dict]) -> dict:
                     listing_date = ?,
                     bullet_points = ?,
                     locations = ?,
+                    country_codes = ?,
                     work_types = ?,
                     work_arrangements = ?,
                     salary_label = ?
@@ -163,6 +185,7 @@ def upsert_jobs(conn, jobs: list[dict]) -> dict:
                 job.get('listingDate'),
                 bullet_points_text,
                 locations_text,
+                country_codes_text,
                 work_types_text,
                 work_arr_text,
                 job.get('salaryLabel'),
@@ -174,9 +197,9 @@ def upsert_jobs(conn, jobs: list[dict]) -> dict:
             conn.execute("""
                 INSERT INTO pg.jobs (
                     id, title, teaser, employer_id, employer_name, role_id,
-                    listing_date, bullet_points, locations, work_types,
+                    listing_date, bullet_points, locations, country_codes, work_types,
                     work_arrangements, salary_label
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, [
                 job_id,
                 job['title'],
@@ -187,6 +210,7 @@ def upsert_jobs(conn, jobs: list[dict]) -> dict:
                 job.get('listingDate'),
                 bullet_points_text,
                 locations_text,
+                country_codes_text,
                 work_types_text,
                 work_arr_text,
                 job.get('salaryLabel')
@@ -208,7 +232,7 @@ def get_active_jobs(conn) -> list[dict]:
     result = conn.execute("""
         SELECT 
             id, title, employer_name, salary_label, 
-            locations, work_types, work_arrangements
+            locations, country_codes, work_types, work_arrangements
         FROM pg.jobs 
         ORDER BY listing_date DESC
     """).fetchall()
@@ -221,8 +245,9 @@ def get_active_jobs(conn) -> list[dict]:
             'employer_name': row[2],
             'salary_label': row[3],
             'locations': row[4] if row[4] else "",
-            'work_types': row[5] if row[5] else "",
-            'work_arrangements': row[6] if row[6] else ""
+            'country_codes': row[5] if row[5] else "",
+            'work_types': row[6] if row[6] else "",
+            'work_arrangements': row[7] if row[7] else ""
         })
     
     return jobs

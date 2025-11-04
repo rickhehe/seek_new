@@ -5,9 +5,6 @@ Main entry point for the application
 """
 
 import os
-import json
-from pathlib import Path
-from datetime import datetime
 from dotenv import load_dotenv
 
 from src import (
@@ -20,18 +17,9 @@ from src import (
 
 load_dotenv()
 
-def main():
+def process(search_url: str):
     """Main application logic"""
-    # Get search URL from environment variable
-    search_url = os.getenv("SEARCH_URL")
-    
-    if not search_url:
-        print("❌ No SEARCH_URL found in .env file")
-        return
-    
-    output_dir = Path("data/processed")
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Extract job data from search URL
     print("🔎 Searching for jobs...\n")
     jobs = extract_job_data_from_url(search_url)
@@ -60,17 +48,6 @@ def main():
     
     conn.close()
     
-    # Optionally save JSON backup
-    save_json = os.getenv("SAVE_JSON", "true").lower() == "true"
-    if save_json:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_file = output_dir / f"jobs_search_{timestamp}.json"
-        
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(jobs, f, indent=2, ensure_ascii=False)
-        
-        print(f"\n💾 JSON backup saved to: {output_file}")
-    
     # Display summary
     print(f"\n{'='*80}")
     print(f"{'JOB SUMMARY':^80}")
@@ -97,6 +74,16 @@ def main():
     
     print(f"{'='*80}\n")
 
+def main():
+    """Main application logic"""
+    # Get search URL from environment variable
+    search_url_1 = os.getenv("SEARCH_URL_1")
+    search_url_2 = os.getenv("SEARCH_URL_2")
+    
+    if search_url_1:
+        process(search_url_1)
+    if search_url_2:
+        process(search_url_2)
 
 if __name__ == "__main__":
     main()
