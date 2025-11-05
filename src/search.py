@@ -2,36 +2,13 @@
 import os
 import subprocess
 import re
-from datetime import datetime, timedelta
 
 from src.utils.my_logger import get_logger
-from src.utils.tg import send_telegram
 
 from dotenv import load_dotenv
 load_dotenv()
 
 LOGGER = get_logger('default')
-tg_api_key = os.getenv("TG_API_KEY")
-tg_chat_id = os.getenv("TG_CHAT_ID")
-
-
-def is_less_than_10m(listing_date: str) -> bool:
-    """
-    Check if a job listing date is less than 10 minutes old
-
-    Args:
-        listing_date: ISO 8601 formatted date string (e.g., "2025-11-03T06:40:11Z")
-        
-    Returns:
-        True if listing is less than 10 minutes old, False otherwise
-    """
-    try:
-        listing_datetime = datetime.fromisoformat(listing_date.replace('Z', '+00:00'))
-        time_diff = datetime.utcnow() - listing_datetime
-        return time_diff <= timedelta(minutes=10)
-    except Exception as e:
-        LOGGER.error(f"Error parsing listing date '{listing_date}': {e}")
-        return False
 
 
 def extract_job_data_from_url(url: str = None) -> list[dict]:
@@ -132,20 +109,7 @@ def extract_job_data_from_url(url: str = None) -> list[dict]:
                 if match:
                     LOGGER.info(f"✅ Match found for job ID {job_id} with role ID {job.get('roleId', '')}")
                     extracted_jobs.append(extracted_job)
-
-                    # Check if listing is less than 10 minutes old
-                    listing_date = job.get('listingDate', '')
-                    if all(
-                        listing_date,
-                        is_less_than_10m(listing_date)
-                    ):
-                        LOGGER.info(f"🆕 Recent listing found for job ID {job_id} listed at {listing_date}")
-                        msg = f"🆕 New job listing found: {job.get('title', 'N/A')} at {job.get('employer', {}).get('name', 'N/A')}\nLink: https://www.seek.com.au/job/{job_id}"
-                        send_telegram(
-                            tg_api_key,
-                            msg,
-                            tg_chat_id
-                        )
+            
             LOGGER.info(f"✅ Found {len(extracted_jobs)} unique jobs")
             return extracted_jobs
             

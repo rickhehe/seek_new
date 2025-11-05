@@ -9,7 +9,12 @@ from datetime import datetime
 import duckdb
 from dotenv import load_dotenv
 
+from src.utils.my_logger import get_logger
+from src.utils.tg import send_telegram
+
 load_dotenv()
+
+LOGGER = get_logger('default')
 
 
 def get_connection():
@@ -133,12 +138,17 @@ def _extract_work_arrangements_text(work_arrangements) -> str:
 def upsert_jobs(conn, jobs: list[dict]) -> dict:
     """
     Insert or update jobs in the database
+    Sends Telegram notification for new jobs only
     
     Returns:
         dict with statistics (new_jobs, updated_jobs, total_active)
     """
     if not jobs:
         return {"new_jobs": 0, "updated_jobs": 0, "total_active": 0}
+    
+    # Get Telegram credentials
+    tg_api_key = os.getenv("TG_API_KEY")
+    tg_chat_id = os.getenv("TG_CHAT_ID")
     
     new_jobs = 0
     updated_jobs = 0
@@ -193,7 +203,7 @@ def upsert_jobs(conn, jobs: list[dict]) -> dict:
             ])
             updated_jobs += 1
         else:
-            # New job - insert it
+            # New job - insert it and send notification
             conn.execute("""
                 INSERT INTO pg.jobs (
                     id, title, teaser, employer_id, employer_name, role_id,
@@ -216,6 +226,21 @@ def upsert_jobs(conn, jobs: list[dict]) -> dict:
                 job.get('salaryLabel')
             ])
             new_jobs += 1
+            
+            # Send Telegram notification for new job
+            if tg_api_key and tg_chat_id:
+                try:
+                    msg = (
+                        f"Title: {job.get('title', 'N/A')}\n"
+                        f"Company: {job.get('employer_name', 'N/A')}\n"
+                        f"Location: {locations_text or 'N/A'}\n"
+                        f"Salary: {job.get('salaryLabel', 'Not specified')}\n"
+                        f"Link: https://www.seek.com.au/job/{job_id}"
+                    )
+                    send_telegram(tg_api_key, msg, tg_chat_id)
+                    LOGGER.info(f"📱 Telegram notification sent for job ID {job_id}")
+                except Exception as e:
+                    LOGGER.error(f"Failed to send Telegram notification for job {job_id}: {e}")
     
     # Get total jobs
     total_active = conn.execute("SELECT COUNT(*) FROM pg.jobs").fetchone()[0]
@@ -225,32 +250,6 @@ def upsert_jobs(conn, jobs: list[dict]) -> dict:
         "updated_jobs": updated_jobs,
         "total_active": total_active
     }
-
-
-def get_active_jobs(conn) -> list[dict]:
-    """Get all jobs"""
-    result = conn.execute("""
-        SELECT 
-            id, title, employer_name, salary_label, 
-            locations, country_codes, work_types, work_arrangements
-        FROM pg.jobs 
-        ORDER BY listing_date DESC
-    """).fetchall()
-    
-    jobs = []
-    for row in result:
-        jobs.append({
-            'id': row[0],
-            'title': row[1],
-            'employer_name': row[2],
-            'salary_label': row[3],
-            'locations': row[4] if row[4] else "",
-            'country_codes': row[5] if row[5] else "",
-            'work_types': row[6] if row[6] else "",
-            'work_arrangements': row[7] if row[7] else ""
-        })
-    
-    return jobs
 
 
 def get_statistics(conn) -> dict:
