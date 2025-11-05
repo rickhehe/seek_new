@@ -9,7 +9,6 @@ from .database import (
     get_connection,
     init_database,
     upsert_jobs,
-    get_active_jobs,
     get_statistics,
 )
 
@@ -18,6 +17,5 @@ __all__ = [
     "get_connection",
     "init_database",
     "upsert_jobs",
-    "get_active_jobs",
     "get_statistics",
 ]
