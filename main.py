@@ -79,11 +79,14 @@ def main():
     # Get search URL from environment variable
     search_url_1 = os.getenv("SEARCH_URL_1")
     search_url_2 = os.getenv("SEARCH_URL_2")
+    search_url_3 = os.getenv("SEARCH_URL_3")
     
     if search_url_1:
         process(search_url_1)
     if search_url_2:
         process(search_url_2)
+    if search_url_3:
+        process(search_url_3)
 
 if __name__ == "__main__":
     main()
