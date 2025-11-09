@@ -105,7 +105,7 @@ def extract_job_data_from_url(url: str = None) -> list[dict]:
                 }
 
                 role_id_of_interest = re.compile(r'data.+engineer', flags=re.I)
-                title_of_interest = re.compile(r'data.+engineer', flags=re.I)
+                title_of_interest = re.compile(r'etl|data.{0,2}engineer', flags=re.I)
                 match = role_id_of_interest.search(job.get('roleId', '')) \
                     or title_of_interest.search(job.get('title', ''))
                 if match:
