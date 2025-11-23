@@ -3,7 +3,7 @@
 New listing tracker on you-know-where (popular job site in AU and NZ). I use it to track Data Engineer jobs.
 
 simply run `./run.sh` to:
-- Get new listings for the 24 hours (customizable)
+- Get new listings
 - Save new listings to a PostgreSQL database  
 - Send Telegram notifications for new job listings which are not yet in database
 
