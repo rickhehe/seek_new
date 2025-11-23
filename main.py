@@ -14,6 +14,7 @@ from src import (
     upsert_jobs,
     get_statistics,
 )
+from src.get_url import construct_seek_url
 
 load_dotenv()
 
@@ -76,14 +77,10 @@ def process(search_url: str):
 
 def main():
     """Main application logic"""
-    # Get search URL from environment variable
-    search_url_1 = os.getenv("SEARCH_URL_1")
-    search_url_2 = os.getenv("SEARCH_URL_2")
-    
-    if search_url_1:
-        process(search_url_1)
-    if search_url_2:
-        process(search_url_2)
+    # Generate all search URLs from environment variables
+    for search_url in construct_seek_url():
+        print(f"\n🔗 Processing URL: {search_url}\n")
+        process(search_url)
 
 if __name__ == "__main__":
     main()

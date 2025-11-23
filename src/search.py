@@ -104,8 +104,9 @@ def extract_job_data_from_url(url: str = None) -> list[dict]:
                     ]
                 }
 
-                role_id_of_interest = re.compile(r'data.+engineer', flags=re.I)
-                match = role_id_of_interest.search(job.get('roleId', ''))
+                # role_id_of_interest = re.compile(r'data.+engineer', flags=re.I)
+                title_of_interest = re.compile(r'etl|data.{0,2}engineer|bi developer|sql developer|analytics.engineer', flags=re.I)
+                match = title_of_interest.search(job.get('title', ''))
                 if match:
                     LOGGER.info(f"✅ Match found for job ID {job_id} with role ID {job.get('roleId', '')}")
                     extracted_jobs.append(extracted_job)
