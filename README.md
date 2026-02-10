@@ -1,5 +1,7 @@
 # SEEK NEW
 
+Lynx does not work for SEEK as of 10 Feb 2026, and this project is currently **on hold**.
+
 New listing tracker on you-know-where (popular job site in AU and NZ). I use it to track Data Engineer jobs.
 
 simply run `./run.sh` to:

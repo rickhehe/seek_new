@@ -13,8 +13,16 @@ from src.utils.my_logger import get_logger
 from src.utils.tg import send_telegram
 
 load_dotenv()
-
+NOTIFIABLE_LOCATIONS = os.getenv("NOTIFIABLE_LOCATIONS", "").lower().split(",")
 LOGGER = get_logger('default')
+
+
+def is_notifiable_location(notifiable_locations: list, locations_text: str) -> bool:
+    """Check if any of the job's locations match the notifiable locations"""
+    for loc in notifiable_locations:
+        if loc in locations_text.lower():
+            return True
+    return False
 
 
 def get_connection():
@@ -66,8 +74,6 @@ def init_database(conn):
     except Exception as e:
         # Column might already exist or other error
         pass
-    
-    print("✅ Database initialized")
 
 
 def _extract_bullet_points_text(bullet_points) -> str:
@@ -203,7 +209,7 @@ def upsert_jobs(conn, jobs: list[dict]) -> dict:
             ])
             updated_jobs += 1
         else:
-            # New job - insert it and send notification
+            # New job - insert it
             conn.execute("""
                 INSERT INTO pg.jobs (
                     id, title, teaser, employer_id, employer_name, role_id,
@@ -227,8 +233,10 @@ def upsert_jobs(conn, jobs: list[dict]) -> dict:
             ])
             new_jobs += 1
             
-            # Send Telegram notification for new job
-            if tg_api_key and tg_chat_id:
+            # Send Telegram notification for new notifiable jobs
+            is_tg_configured = tg_api_key and tg_chat_id       
+            is_notifiable = is_notifiable_location(NOTIFIABLE_LOCATIONS, locations_text)
+            if is_tg_configured and is_notifiable:
                 try:
                     msg = (
                         f"Title: {job.get('title', 'N/A')}\n"
